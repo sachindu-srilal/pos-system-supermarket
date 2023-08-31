@@ -42,47 +42,52 @@ public class CustomerDAOImpl implements CustomerDAO {
     }
 
     @Override
-    public void update(Customer entity) throws Exception {
-
+    public void update(Customer customer) throws Exception {
+        jdbcTemplate.update("UPDATE customer SET name=?, address=?, contact=? WHERE id=?",
+                customer.getName(), customer.getAddress(), customer.getContact(), customer.getId());
     }
 
     @Override
-    public void deleteById(Integer pk) throws Exception {
-
+    public void deleteById(Integer id) throws Exception {
+        jdbcTemplate.update("DELETE FROM customer WHERE id=?", id);
     }
 
     @Override
-    public Optional<Customer> findById(Integer pk) throws Exception {
-        return Optional.empty();
+    public Optional<Customer> findById(Integer id) throws Exception {
+        return Optional.ofNullable(jdbcTemplate.queryForObject("SELECT * FROM customer WHERE id=?",CUSTOMER_ROW_MAPPER, id));
+        //Avoiding NullPointerExceptions(occur when directly working with nullable references): By using Optional.ofNullable();
     }
 
     @Override
     public List<Customer> findAll() throws Exception {
-        return null;
+        return jdbcTemplate.query("SELECT * FROM customer", CUSTOMER_ROW_MAPPER);
     }
 
     @Override
-    public boolean existsById(Integer pk) throws Exception {
-        return false;
+    public boolean existsById(Integer id) throws Exception {
+        return findById(id).isPresent();
     }
 
     @Override
     public List<Customer> findCustomers(String query) throws Exception {
-        return null;
+        query="%"+query+"%";
+        return jdbcTemplate.query("SELECT * FROM customer WHERE id LIKE ? OR name LIKE ? OR address LIKE ? OR contact LIKE ?",
+                CUSTOMER_ROW_MAPPER,query,query,query,query);
     }
 
     @Override
     public Optional<Customer> findCustomerByIdOrContact(String idOrContact) throws Exception {
-        return Optional.empty();
+        return Optional.ofNullable(jdbcTemplate.queryForObject("SELECT * FROM customer WHERE id=? OR contact=?",
+                CUSTOMER_ROW_MAPPER,idOrContact,idOrContact));
     }
 
     @Override
     public boolean existsCustomerByContact(String contact) throws Exception {
-        return CustomerDAO.super.existsCustomerByContact(contact);
+        return jdbcTemplate.queryForObject("SELECT * FROM customer WHERE contact=?", CUSTOMER_ROW_MAPPER,contact) !=null;
     }
 
     @Override
     public boolean existsCustomerByContactAndNotId(String contact, Integer id) throws Exception {
-        return false;
+        return jdbcTemplate.queryForObject("SELECT * FROM customer WHERE contact=? AND id<>?", CUSTOMER_ROW_MAPPER, contact,id)!=null;
     }
 }
